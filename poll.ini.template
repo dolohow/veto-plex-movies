@@ -1,0 +1,15 @@
+[General]
+# Specifies time in hours after which movie will be removed if no one will
+# veto vote against.
+poll_timeout_hours = 24
+
+[Telegram]
+# You can obtain it by asking several question to @BotFather and
+# creating your own bot.
+bot_token =
+# ID of channel you would like to post a poll to.
+poll_channel =
+
+[Plex]
+baseURL = http://localhost:32400
+token =
