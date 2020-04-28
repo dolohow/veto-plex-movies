@@ -114,23 +114,23 @@ class RemovePoll(Poll):
 POLLS = {}
 
 
-def question_remove(bot, update):
-    poll = RemovePoll(bot, update.message.text, CONFIG['Telegram']['poll_channel'])
+def question_remove(update, context):
+    poll = RemovePoll(context.bot, update.message.text, CONFIG['Telegram']['poll_channel'])
     poll.create_poll()
     POLLS[poll.message_id] = poll
     return ConversationHandler.END
 
 
-def handle_answer(bot, update):
+def handle_answer(update, context):
     POLLS[update.callback_query.message.message_id].handle_update(update)
 
 
-def handle_cancel(bot, update):
+def handle_cancel(update, context):
     return ConversationHandler.END
 
 
-def handle_search(bot, update, args):
-    search_results = PLEX.search(' '.join(args))
+def handle_search(update, context):
+    search_results = PLEX.search(' '.join(context.args))
     if not search_results:
         update.message.reply_text("No movie found")
         return ConversationHandler.END
@@ -142,12 +142,12 @@ def handle_search(bot, update, args):
     return SELECT
 
 
-def error_handler(bot, update, error):
-    LOGGER.error(error)
+def error_handler(update, context):
+    LOGGER.error(context.error)
 
 
 def main():
-    updater = Updater(CONFIG['Telegram']['bot_token'])
+    updater = Updater(CONFIG['Telegram']['bot_token'], use_context=True)
 
     updater.dispatcher.add_handler(ConversationHandler(
         entry_points=[CommandHandler('remove', handle_search, pass_args=True)],
