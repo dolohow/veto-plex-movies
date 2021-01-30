@@ -57,6 +57,22 @@ class RemovePoll(Poll):
         self.timer = Timer(60 * 60 * timeout, self.remove_media)
         self.media = self._media()
 
+    def create_link(self):
+        imdb_url = "https://www.imdb.com/title/"
+
+        if "imdb://" in self.media.guid:
+            return imdb_url + self.media.guid.split('//')[1]
+        if "thetvdb://" in self.media.guid:
+            return "https://thetvdb.com/?tab=series&id=" + self.media.guid.split('//')[1]
+
+        for guid in self.media.guids:
+            if "imdb://" in guid.id:
+                return imdb_url + guid.id.split('//')[1]
+            if "tmdb://" in guid.id:
+                return "https://www.themoviedb.org/movie/" + guid.id.split('//')[1]
+
+        return None
+
     def create_poll(self):
         buttons = [
             [
@@ -64,14 +80,7 @@ class RemovePoll(Poll):
             ]
         ]
         reply_markup = InlineKeyboardMarkup(buttons)
-        descr_url = None
-        imdb_id = re.search('tt.*[0-9]', self.movie.guid)
-        themoviedb_id = re.search('themoviedb://([0-9].*)', self.movie.guid)
-        if imdb_id:
-            descr_url = 'https://www.imdb.com/title/{}'.format(imdb_id.group())
-        elif themoviedb_id:
-            descr_url = 'https://www.themoviedb.org/tv/{}'.format(themoviedb_id.group(1))
-
+        descr_url = self.create_link()
 
         text = (f"*{self.media.title} ({self.media.year})* {self.media.type} is scheduled for "
                 f"removal within *{self.timeout} hours*. Would you like to keep it? "
