@@ -12,7 +12,7 @@ from telegram.ext import (Updater, CommandHandler, CallbackQueryHandler, Convers
 CONFIG = configparser.ConfigParser()
 CONFIG.read("poll.ini")
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logging.basicConfig(format='%(asctime)s %(lineno)d - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 
 LOGGER = logging.getLogger(__name__)
