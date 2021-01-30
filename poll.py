@@ -130,10 +130,11 @@ def handle_cancel(update, context):
 
 
 def handle_search(update, context):
-    search_results = PLEX.search(' '.join(context.args))
-    if not search_results:
-        update.message.reply_text("No movie found")
+    search_string = ' '.join(context.args)
+    if not search_string:
+        update.message.reply_text("You did not provide a search term")
         return ConversationHandler.END
+    search_results = PLEX.library.search(search_string)
     buttons = [
         [KeyboardButton('{} ({})'.format(movie.title, movie.year))] for movie in search_results
     ]
