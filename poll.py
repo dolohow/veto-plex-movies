@@ -1,13 +1,22 @@
+import argparse
 import logging
 import re
 import configparser
 
+import daemon
+
 from threading import Timer
+
 from plexapi.server import PlexServer
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import (Updater, CommandHandler, CallbackQueryHandler, ConversationHandler,
                           MessageHandler, Filters)
 
+PARSER = argparse.ArgumentParser(description="Allows you to veto vote against removal of Plex"
+                                              "movies and serieses on Telegram")
+PARSER.add_argument('--daemon', '-d', action='store_true', help='Run as daemon')
+
+CMD_ARGS = PARSER.parse_args()
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read("poll.ini")
@@ -190,4 +199,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    if CMD_ARGS.daemon:
+        with daemon.DaemonContext():
+            main()
+    else:
+        main()

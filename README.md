@@ -30,8 +30,9 @@ python poll.py
 ```
 
 If you want it to run in background, which is advisable.  You can use
-`screen`, `tmux` or `nohup`, like this:
 
 ```
-nohup python poll.py &
+python poll.py -d
 ```
+
+It is also good idea to run it with `systemd`.
