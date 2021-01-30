@@ -49,12 +49,13 @@ class Poll:
 
 class RemovePoll(Poll):
 
-    def __init__(self, bot, args, chat_id):
+    def __init__(self, bot, args, chat_id, timeout):
         super().__init__(bot, args)
         self.message_id = None
         self.chat_id = chat_id
-        self.timer = Timer(60*60*CONFIG['General'].getint('poll_timeout_hours'), self.remove_movie)
-        self.movie = self._movie()
+        self.timeout = timeout
+        self.timer = Timer(60 * 60 * timeout, self.remove_media)
+        self.media = self._media()
 
     def create_poll(self):
         buttons = [
@@ -71,12 +72,15 @@ class RemovePoll(Poll):
         elif themoviedb_id:
             descr_url = 'https://www.themoviedb.org/tv/{}'.format(themoviedb_id.group(1))
 
-        text = ("*{}* is scheduled for removal within *{} hours*. "
-                "Would you like to keep it? "
-                "{}").format(self.args, CONFIG['General'].getint('poll_timeout_hours'), descr_url)
+
+        text = (f"*{self.media.title} ({self.media.year})* {self.media.type} is scheduled for "
+                f"removal within *{self.timeout} hours*. Would you like to keep it? "
+                f"{descr_url if descr_url is not None else ''}")
+
         self.message_id = self.bot.send_message(chat_id=self.chat_id,
                                                 text=text, parse_mode='markdown',
                                                 reply_markup=reply_markup).message_id
+        LOGGER.info("Remove poll started for '%s'", self.media.title)
         self.timer.start()
 
     def edit_message(self, new_text):
@@ -89,23 +93,23 @@ class RemovePoll(Poll):
         self.edit_message(("*{}* removal is postponed. "
                            "Happy watching :)").format(self.args))
 
-    def _movie(self):
-        title = re.search(r'(.*) \(', self.args).group(1)
+    def _media(self):
+        title = re.search(r': (.*) \(', self.args).group(1)
         year = re.search(r'.* \((.*)\)', self.args).group(1)
-        movie = PLEX.library.search(title, year=year)
-        if len(movie) > 1:
-            LOGGER.error('Cannot remove, more that one movie %s %s', title, year)
+        media = PLEX.library.search(title, year=year)
+        if len(media) > 1:
+            LOGGER.error('Cannot remove, more that one media %s %s', title, year)
             raise
-        return movie[0]
+        return media[0]
 
-    def remove_movie(self):
-        if not self.movie:
-            LOGGER.error('Could not find movie %s %s', self.movie.title, self.movie.year)
-        self.movie.delete()
+    def remove_media(self):
+        if not self.media:
+            LOGGER.error('Could not find media %s %s', self.media.title, self.media.year)
+        self.media.delete()
         self.edit_message('*{}* was removed'.format(self.args))
 
     def answer_yes(self, update):
-        LOGGER.info("User %s wants to keep movie %s",
+        LOGGER.info("User '%s' wants to keep media '%s'",
                     update.callback_query.from_user.first_name,
                     self.args)
         self.timer.cancel()
@@ -115,7 +119,10 @@ POLLS = {}
 
 
 def question_remove(update, context):
-    poll = RemovePoll(context.bot, update.message.text, CONFIG['Telegram']['poll_channel'])
+    poll = RemovePoll(context.bot,
+                      update.message.text,
+                      CONFIG['Telegram']['poll_channel'],
+                      CONFIG['General'].getint('poll_timeout_hours'))
     poll.create_poll()
     POLLS[poll.message_id] = poll
     return ConversationHandler.END
@@ -134,12 +141,20 @@ def handle_search(update, context):
     if not search_string:
         update.message.reply_text("You did not provide a search term")
         return ConversationHandler.END
+
+    LOGGER.info("Started querying PLEX server for '%s'", search_string)
     search_results = PLEX.library.search(search_string)
+    filtered = [s for s in search_results if hasattr(s, "year") and s.year is not None]
+    if not filtered:
+        update.message.reply_text("No media found")
+        return ConversationHandler.END
+
     buttons = [
-        [KeyboardButton('{} ({})'.format(movie.title, movie.year))] for movie in search_results
+        [KeyboardButton(f"{media.type}: {media.title} ({media.year})")] for media in filtered
     ]
-    update.message.reply_text("Choose movie",
+    update.message.reply_text("Choose media",
                               reply_markup=ReplyKeyboardMarkup(buttons, one_time_keyboard=True))
+
     return SELECT
 
 
