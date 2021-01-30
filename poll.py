@@ -154,7 +154,8 @@ def main():
         states={
             SELECT: [MessageHandler(Filters.text, question_remove)]
         },
-        fallbacks=[CommandHandler('cancel', handle_cancel)]
+        fallbacks=[CommandHandler('cancel', handle_cancel)],
+        allow_reentry=True
     ))
     updater.dispatcher.add_handler(CallbackQueryHandler(handle_answer))
     updater.dispatcher.add_error_handler(error_handler)
