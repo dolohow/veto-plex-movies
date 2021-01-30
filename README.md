@@ -10,9 +10,7 @@ you are not sure if removing movie or series will make them angry ;)
 
 
 ## Installation
-You need Python 3 to run this program.  It can now on Python 2, but I
-did not make any effort to support that.
-
+You need at least Python 3.6 to run this program.
 ```
 pip install -r requirements.txt
 ```
